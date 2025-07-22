@@ -1,0 +1,200 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: laravel-env
+  namespace: flex-url
+data:
+  APP_NAME: "Laravel"
+  APP_ENV: "local"
+  APP_DEBUG: "true"
+  APP_URL: "http://laravel.local"
+  LOG_CHANNEL: "stderr"
+  LOG_DEPRECATIONS_CHANNEL: "null"
+  LOG_LEVEL: "debug"
+  DB_CONNECTION: "mysql"
+  DB_HOST: "mysql"
+  DB_PORT: "3306"
+  DB_DATABASE: "laravel"
+  DB_USERNAME: "laravel"
+  CACHE_DRIVER: "file"
+  FILESYSTEM_DISK: "local"
+  QUEUE_CONNECTION: "sync"
+  SESSION_DRIVER: "file"
+  SESSION_LIFETIME: "120"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: laravel-secret
+  namespace: flex-url
+type: Opaque
+stringData:
+  APP_KEY: "base64:your-app-key-here"  # Run: php artisan key:generate --show
+  DB_PASSWORD: "your_password"         # Same as mysql secret
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: flex-url
+data:
+  default.conf: |
+    server {
+        listen 80;
+        index index.php index.html;
+        error_log  /var/log/nginx/error.log;
+        access_log /var/log/nginx/access.log;
+        root /var/www/public;
+
+        location ~ \.php$ {
+            try_files $uri =404;
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_index index.php;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_param PATH_INFO $fastcgi_path_info;
+        }
+        
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+            gzip_static on;
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel-app
+  namespace: flex-url
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: laravel-app
+  template:
+    metadata:
+      labels:
+        app: laravel-app
+    spec:
+      initContainers:
+      # Wait for MySQL
+      - name: wait-for-mysql
+        image: busybox:1.35
+        command: 
+        - sh
+        - -c
+        - |
+          until nc -z mysql 3306; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+          echo "MySQL is ready!"
+      
+      # Run migrations
+      - name: laravel-migrate
+        image: flex-url-app:latest
+        command: ['php', 'artisan', 'migrate', '--force']
+        envFrom:
+        - configMapRef:
+            name: laravel-env
+        - secretRef:
+            name: laravel-secret
+        volumeMounts:
+        - name: app-storage
+          mountPath: /var/www/storage
+        - name: cache-storage
+          mountPath: /var/www/bootstrap/cache
+      
+      containers:
+      # PHP-FPM Container
+      - name: php-fpm
+        image: flex-url-app:latest
+        ports:
+        - containerPort: 9000
+        envFrom:
+        - configMapRef:
+            name: laravel-env
+        - secretRef:
+            name: laravel-secret
+        volumeMounts:
+        - name: app-storage
+          mountPath: /var/www/storage
+        - name: cache-storage
+          mountPath: /var/www/bootstrap/cache
+        resources:
+          limits:
+            memory: "512Mi"
+          requests:
+            memory: "256Mi"
+        livenessProbe:
+          exec:
+            command:
+            - php
+            - artisan
+            - tinker
+            - --execute=echo 'OK';
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - php
+            - artisan
+            - tinker
+            - --execute=echo 'OK';
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      
+      # Nginx Container
+      - name: nginx
+        image: nginx:1.25-alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+        - name: app-public
+          mountPath: /var/www/public
+          readOnly: true
+        resources:
+          limits:
+            memory: "128Mi"
+          requests:
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+      - name: app-public
+        emptyDir: {}
+      - name: app-storage
+        emptyDir: {}
+      - name: cache-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: laravel-service
+  namespace: flex-url
+spec:
+  selector:
+    app: laravel-app
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP

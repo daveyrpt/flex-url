@@ -1,5 +1,5 @@
-# Multi-stage build for Node.js dependencies
-FROM node:18-alpine AS node-builder
+# Use newer Node.js version to address vulnerabilities
+FROM node:20-alpine AS node-builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
@@ -7,7 +7,7 @@ RUN npm ci --only=production && npm cache clean --force
 # Main PHP image
 FROM php:8.2-fpm-alpine
 
-# Install system dependencies including Node.js
+# Install system dependencies
 RUN apk add --no-cache \
     mysql-client \
     nodejs \
@@ -34,13 +34,14 @@ RUN addgroup -g 1000 www && \
 # Set working directory
 WORKDIR /var/www
 
-# Copy dependency files first for better caching
+# Copy composer files first for better caching
 COPY --chown=www:www composer.json composer.lock ./
 
 # Install PHP dependencies
+USER www
 RUN composer install --no-dev --no-scripts --no-autoloader --optimize-autoloader
 
-# Create required directories and set permissions
+# Create required directories
 USER root
 RUN mkdir -p \
     /var/www/storage/logs \
@@ -50,35 +51,40 @@ RUN mkdir -p \
     /var/www/bootstrap/cache \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache \
     && chown -R www:www /var/www
-USER www
 
-# Copy application code (excluding node_modules)
+# Copy application code first (this will overwrite any existing node_modules)
 COPY --chown=www:www . .
-RUN rm -rf node_modules
 
-# Copy package.json and install Node dependencies in the final image
+# Clean any existing node_modules to prevent conflicts
+RUN rm -rf /var/www/node_modules
+
+# Install Node.js dependencies fresh
+USER www
 COPY --chown=www:www package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
-# Build frontend assets (if needed)
-RUN npm run build 2>/dev/null || echo "No build script found, skipping..."
+# Build frontend assets if build script exists
+RUN if grep -q '"build"' package.json; then npm run build; else echo "No build script found"; fi
 
-# Generate autoloader and cache
+# Generate optimized autoloader
 RUN composer dump-autoload --optimize
 
-# Don't cache config/routes/views in Docker build - do it at runtime
-# RUN php artisan config:cache && \
-#     php artisan route:cache && \
-#     php artisan view:cache
-
-# Create startup script
+# Create entrypoint script for runtime optimization
 USER root
-RUN echo '#!/bin/sh' > /var/www/docker-entrypoint.sh && \
-    echo 'php artisan config:cache' >> /var/www/docker-entrypoint.sh && \
-    echo 'php artisan route:cache' >> /var/www/docker-entrypoint.sh && \
-    echo 'php artisan view:cache' >> /var/www/docker-entrypoint.sh && \
-    echo 'exec php-fpm' >> /var/www/docker-entrypoint.sh && \
-    chmod +x /var/www/docker-entrypoint.sh && \
+RUN cat > /var/www/docker-entrypoint.sh << 'EOF'
+#!/bin/sh
+set -e
+
+echo "Optimizing Laravel caches..."
+php artisan config:cache
+php artisan route:cache  
+php artisan view:cache
+
+echo "Starting PHP-FPM..."
+exec php-fpm
+EOF
+
+RUN chmod +x /var/www/docker-entrypoint.sh && \
     chown www:www /var/www/docker-entrypoint.sh
 
 USER www
