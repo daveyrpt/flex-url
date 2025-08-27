@@ -1,7 +1,24 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
+import { useState } from 'react';
+import Sidebar from '@/Components/Sidebar';
+import FileUpload from '@/Components/FileUpload';
+import ChatBot from '@/Components/ChatBot';
 
 export default function Dashboard({ auth }) {
+    const [activeSection, setActiveSection] = useState('upload');
+
+    const renderContent = () => {
+        switch (activeSection) {
+            case 'upload':
+                return <FileUpload />;
+            case 'chat':
+                return <ChatBot />;
+            default:
+                return <FileUpload />;
+        }
+    };
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -9,11 +26,14 @@ export default function Dashboard({ auth }) {
         >
             <Head title="Dashboard" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">You're logged in!</div>
-                    </div>
+            <div className="flex h-screen pt-16">
+                <Sidebar 
+                    activeSection={activeSection} 
+                    onSectionChange={setActiveSection} 
+                />
+                
+                <div className="flex-1 p-8 bg-gray-50 overflow-auto">
+                    {renderContent()}
                 </div>
             </div>
         </AuthenticatedLayout>

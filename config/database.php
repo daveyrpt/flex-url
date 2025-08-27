@@ -93,6 +93,15 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        'mysql_rds' => [
+            'driver' => 'mysql',
+            'host' => env('DB_RDS_HOST'),
+            'port' => env('DB_RDS_PORT', '3306'),
+            'database' => env('DB_RDS_DATABASE'),
+            'username' => env('DB_RDS_USERNAME'),
+            'password' => env('DB_RDS_PASSWORD'),
+            // ... other config
+        ],
     ],
 
     /*
