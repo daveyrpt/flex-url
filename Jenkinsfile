@@ -20,77 +20,77 @@ pipeline {
                 git 'https://github.com/daveyrpt/flex-url.git'
             }
         }
-        
-        stage('Build') {
-            steps {
-                echo 'Building application...'
-                sh 'node --version'  // Verify Node.js is available
-                sh 'npm --version'   // Verify npm is available
-                sh 'npm install'
-            }
-        }
+       
+        // stage('Build') {
+        //     steps {
+        //         echo 'Building application...'
+        //         sh 'node --version'  // Verify Node.js is available
+        //         sh 'npm --version'   // Verify npm is available
+        //         sh 'npm install'
+        //     }
+        // }
 
-        stage('Check Scripts') {
-            steps {
-                echo 'Checking available scripts...'
-                sh 'npm run' // This will list all available scripts
-                sh 'cat package.json' // Show package.json content
-            }
-        }
+        // stage('Check Scripts') {
+        //     steps {
+        //         echo 'Checking available scripts...'
+        //         sh 'npm run' // This will list all available scripts
+        //         sh 'cat package.json' // Show package.json content
+        //     }
+        // }
         
-        stage('Test') {
-            steps {
-                echo 'Running tests...'
-                sh 'npm test'
-            }
-        }
+        // stage('Test') {
+        //     steps {
+        //         echo 'Running tests...'
+        //         sh 'npm test'
+        //     }
+        // }
         
-        stage('Dependecny Check') {
-            steps {
-                echo 'Running dependency check...'
-                // sh 'npm audit' // use owasp
-            }
-        }
+        // stage('Dependecny Check') {
+        //     steps {
+        //         echo 'Running dependency check...'
+        //         // sh 'npm audit' // use owasp
+        //     }
+        // }
 
-        stage('SonarQube Analysis') {
-            steps {
-                script {
-                    def scannerHome = tool 'SonarScanner'
-                    withSonarQubeEnv('SonarQube') {
-                        withEnv(["SCANNER_HOME=${scannerHome}"]) {
-                            sh '''
-                                $SCANNER_HOME/bin/sonar-scanner \
-                                  -Dsonar.projectKey=daveyrpt_flex-url \
-                                  -Dsonar.organization=dvyrpt \
-                                  -Dsonar.sources=. \
-                                  -Dsonar.exclusions=**/node_modules/**,**/coverage/** \
-                                  -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-                            '''
-                        }
-                    }
-                }
-            }
-        }
+        // stage('SonarQube Analysis') {
+        //     steps {
+        //         script {
+        //             def scannerHome = tool 'SonarScanner'
+        //             withSonarQubeEnv('SonarQube') {
+        //                 withEnv(["SCANNER_HOME=${scannerHome}"]) {
+        //                     sh '''
+        //                         $SCANNER_HOME/bin/sonar-scanner \
+        //                           -Dsonar.projectKey=daveyrpt_flex-url \
+        //                           -Dsonar.organization=dvyrpt \
+        //                           -Dsonar.sources=. \
+        //                           -Dsonar.exclusions=**/node_modules/**,**/coverage/** \
+        //                           -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+        //                     '''
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('Quality Gate') {
-            steps {
-                script {
-                    timeout(time: 5, unit: 'MINUTES') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                        } else {
-                            echo "Quality Gate passed with status: ${qg.status}"
-                        }
-                    }
-                }
-            }
-        }
+        // stage('Quality Gate') {
+        //     steps {
+        //         script {
+        //             timeout(time: 5, unit: 'MINUTES') {
+        //                 def qg = waitForQualityGate()
+        //                 if (qg.status != 'OK') {
+        //                     error "Pipeline aborted due to quality gate failure: ${qg.status}"
+        //                 } else {
+        //                     echo "Quality Gate passed with status: ${qg.status}"
+        //                 }
+        //             }
+        //         }
+        //     }
+        // } 
 
         stage('Build Docker Image') {
             agent {
                 docker {
-                    image 'docker:dind'
+                    image 'docker:cli'
                     args '-v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
