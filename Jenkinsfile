@@ -75,21 +75,49 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    // timeout(time: 5, unit: 'MINUTES') {
-                    //     def qg = waitForQualityGate()
-                    //     if (qg.status != 'OK') {
-                    //         error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                    //     } else {
-                    //         echo "Quality Gate passed with status: ${qg.status}"
-                    //     }
-                    // }
-
-                    def qg = waitForQualityGate()
-                    if (qg.status != 'OK') {
-                        error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                    } else {
-                        echo "Quality Gate passed with status: ${qg.status}"
+                    timeout(time: 5, unit: 'MINUTES') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        } else {
+                            echo "Quality Gate passed with status: ${qg.status}"
+                        }
                     }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            agent {
+                docker {
+                    image 'docker:latest'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
+            steps {
+                script {
+                    echo 'Building Docker image...'
+                    
+                    // Get git commit hash for tagging
+                    def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                    def buildNumber = env.BUILD_NUMBER
+                    def imageName = "ghcr.io/daveyrpt/flex-url"
+                    
+                    // Build the Docker image
+                    sh """
+                        docker build -t ${imageName}:${commitHash} .
+                        docker build -t ${imageName}:build-${buildNumber} .
+                        docker build -t ${imageName}:latest .
+                    """
+                    
+                    // Store image details for later stages
+                    env.DOCKER_IMAGE = imageName
+                    env.COMMIT_HASH = commitHash
+                    
+                    echo "Built Docker images:"
+                    echo "- ${imageName}:${commitHash}"
+                    echo "- ${imageName}:build-${buildNumber}"
+                    echo "- ${imageName}:latest"
                 }
             }
         }
