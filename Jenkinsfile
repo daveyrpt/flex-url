@@ -88,12 +88,6 @@ pipeline {
         // } 
 
         stage('Build Docker Image') {
-            agent {
-                docker {
-                    image 'docker:cli'
-                    args '-v /var/run/docker.sock:/var/run/docker.sock'
-                }
-            }
             steps {
                 script {
                     echo 'Building Docker image...'
@@ -103,11 +97,9 @@ pipeline {
                     def buildNumber = env.BUILD_NUMBER
                     def imageName = "ghcr.io/daveyrpt/flex-url"
                     
-                    // Build the Docker image
+                    // Build the Docker image with multiple tags in one command
                     sh """
-                        docker build -t ${imageName}:${commitHash} .
-                        docker build -t ${imageName}:build-${buildNumber} .
-                        docker build -t ${imageName}:latest .
+                        docker build -t ${imageName}:${commitHash} -t ${imageName}:build-${buildNumber} -t ${imageName}:latest .
                     """
                     
                     // Store image details for later stages
