@@ -123,6 +123,32 @@ pipeline {
         //     }
         // }
 
+        stage('Push to GHCR') {
+            steps {
+                script {
+                    echo 'Pushing Docker image to GitHub Container Registry...'
+                    
+                    // Login to GHCR and push images
+                    withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
+                        sh """
+                            echo \${GITHUB_TOKEN} | docker login ghcr.io -u \${GITHUB_USER} --password-stdin
+                            
+                            docker push ${env.DOCKER_IMAGE}:${env.COMMIT_HASH}
+                            docker push ${env.DOCKER_IMAGE}:build-${env.BUILD_NUMBER}
+                            docker push ${env.DOCKER_IMAGE}:latest
+                            
+                            docker logout ghcr.io
+                        """
+                    }
+                    
+                    echo "Successfully pushed images to GHCR:"
+                    echo "- ${env.DOCKER_IMAGE}:${env.COMMIT_HASH}"
+                    echo "- ${env.DOCKER_IMAGE}:build-${env.BUILD_NUMBER}"
+                    echo "- ${env.DOCKER_IMAGE}:latest"
+                }
+            }
+        }
+
         // stage('Push to GHCR') {
         //     steps {
         //         script {
@@ -134,7 +160,7 @@ pipeline {
         //         }
         //     }
         // }
-
+        
         // stage('Deploy') {
         //     when {
         //         // Only deploy if all previous stages pass
