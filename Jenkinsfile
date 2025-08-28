@@ -90,7 +90,7 @@ pipeline {
         stage('Build Docker Image') {
             agent {
                 docker {
-                    image 'docker:latest'
+                    image 'docker:dind'
                     args '-v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
@@ -121,7 +121,7 @@ pipeline {
                 }
             }
         }
-        
+
         // stage('Build Docker Image') {
         //     steps {
         //         script {
