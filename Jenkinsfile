@@ -128,10 +128,10 @@ pipeline {
                 script {
                     echo 'Pushing Docker image to GitHub Container Registry...'
                     
-                    // Login to GHCR and push images
-                    withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
+                    // Login to GHCR and push images using GitHub token
+                    withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                         sh """
-                            echo \${GITHUB_TOKEN} | docker login ghcr.io -u \${GITHUB_USER} --password-stdin
+                            echo \${GITHUB_TOKEN} | docker login ghcr.io -u daveyrpt --password-stdin
                             
                             docker push ${env.DOCKER_IMAGE}:${env.COMMIT_HASH}
                             docker push ${env.DOCKER_IMAGE}:build-${env.BUILD_NUMBER}
