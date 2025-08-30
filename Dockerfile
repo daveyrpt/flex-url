@@ -52,6 +52,9 @@ COPY --from=node-deps --chown=www:www /app/node_modules ./node_modules
 # Copy application code
 COPY --chown=www:www . .
 
+# Build frontend assets
+RUN npm run build
+
 # Generate autoloader and optimize
 RUN composer dump-autoload --optimize && \
     php artisan config:cache && \
