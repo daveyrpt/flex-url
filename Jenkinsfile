@@ -21,14 +21,15 @@ pipeline {
             }
         }
        
-        // stage('Build') {
-        //     steps {
-        //         echo 'Building application...'
-        //         sh 'node --version'  // Verify Node.js is available
-        //         sh 'npm --version'   // Verify npm is available
-        //         sh 'npm install'
-        //     }
-        // }
+        stage('Build') {
+            steps {
+                echo 'Building application...'
+                sh 'node --version'  // Verify Node.js is available
+                sh 'npm --version'   // Verify npm is available
+                sh 'npm install'
+                sh 'npm run build'   // Build frontend assets with vite
+            }
+        }
 
         // stage('Check Scripts') {
         //     steps {
