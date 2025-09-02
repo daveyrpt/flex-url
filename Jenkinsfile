@@ -226,6 +226,10 @@ pipeline {
                     
                     withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                         sh """
+                            # Configure git global settings
+                            git config --global user.name "Davey"
+                            git config --global user.email "davey.rpt@gmail.com"
+                            
                             # Clone the deployment/helm repository
                             git clone https://github.com/daveyrpt/Kubernetes.git
                             cd Kubernetes/helm/laravel-app
