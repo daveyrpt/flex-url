@@ -149,7 +149,7 @@ pipeline {
                             # Clone the deployment/helm repository with authentication
                             git clone https://\${GITHUB_TOKEN}@github.com/daveyrpt/Kubernetes.git
                             cd Kubernetes/helm/laravel-app
-                            sed -i 's/tag: .*/tag: "build-${BUILD_NUMBER}"/g' values.yaml
+                            sed -i '/laravel:/,/pullPolicy:/ s/tag: .*/tag: "build-${BUILD_NUMBER}"/' values.yaml
                             git commit -am "Update image tag to build-${BUILD_NUMBER}"
                             git push https://\${GITHUB_TOKEN}@github.com/daveyrpt/Kubernetes.git
                         """
