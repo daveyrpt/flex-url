@@ -54,9 +54,7 @@ COPY --chown=www:www . .
 
 # Generate autoloader and optimize
 RUN composer dump-autoload --optimize && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache 
+    php artisan optimize 
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
