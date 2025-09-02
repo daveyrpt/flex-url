@@ -53,10 +53,11 @@ COPY --from=node-deps --chown=www:www /app/node_modules ./node_modules
 COPY --chown=www:www . .
 
 # Generate autoloader and optimize
-# RUN composer dump-autoload --optimize && \
-#     php artisan config:cache && \
-#     php artisan route:cache && \
-#     php artisan view:cache
+RUN composer dump-autoload --optimize && \
+    php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache && \
+    php artisan optimize
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
