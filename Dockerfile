@@ -53,10 +53,10 @@ COPY --from=node-deps --chown=www:www /app/node_modules ./node_modules
 COPY --chown=www:www . .
 
 # Generate autoloader and optimize
-RUN composer dump-autoload --optimize && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache
+# RUN composer dump-autoload --optimize && \
+#     php artisan config:cache && \
+#     php artisan route:cache && \
+#     php artisan view:cache
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
@@ -64,6 +64,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 EXPOSE 9000
 
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
-CMD ["/start.sh"]
+CMD ["php-fpm"]
