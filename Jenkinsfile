@@ -30,14 +30,6 @@ pipeline {
                 sh 'npm run build'   // Build frontend assets with vite
             }
         }
-
-        // stage('Check Scripts') {
-        //     steps {
-        //         echo 'Checking available scripts...'
-        //         sh 'npm run' // This will list all available scripts
-        //         sh 'cat package.json' // Show package.json content
-        //     }
-        // }
         
         // stage('Test') {
         //     steps {
@@ -115,15 +107,6 @@ pipeline {
             }
         }
 
-        // stage('Build Docker Image') {
-        //     steps {
-        //         script {
-        //             def image = docker.build("ghcr.io/daveyrpt/flex-url:${env.BUILD_NUMBER}")
-        //             image.tag("latest")
-        //         }
-        //     }
-        // }
-
         stage('Push to GHCR') {
             steps {
                 script {
@@ -150,73 +133,6 @@ pipeline {
             }
         }
 
-        // stage('Push to GHCR') {
-        //     steps {
-        //         script {
-        //             docker.withRegistry('https://ghcr.io', 'github-token') {
-        //                 def image = docker.image("ghcr.io/daveyrpt/flex-url:${env.BUILD_NUMBER}")
-        //                 image.push()
-        //                 image.push("latest")
-        //             }
-        //         }
-        //     }
-        // }
-        
-        // stage('Deploy') {
-        //     when {
-        //         // Only deploy if all previous stages pass
-        //         expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-        //     }
-        //     steps {
-        //         script {
-        //             echo 'Deploying application...'
-        //             echo "Container successfully built and pushed to GHCR!"
-        //             echo "Image available at: ${env.DOCKER_IMAGE}:${env.COMMIT_HASH}"
-        //             echo "Latest tag: ${env.DOCKER_IMAGE}:latest"
-                    
-        //             // Create deployment instructions
-        //             sh '''
-        //                 echo "=== Deployment Instructions ===" > deployment-instructions.txt
-        //                 echo "Image: ${DOCKER_IMAGE}:${COMMIT_HASH}" >> deployment-instructions.txt
-        //                 echo "Build: ${BUILD_NUMBER}" >> deployment-instructions.txt
-        //                 echo "Commit: ${COMMIT_HASH}" >> deployment-instructions.txt
-        //                 echo "" >> deployment-instructions.txt
-        //                 echo "To deploy this version:" >> deployment-instructions.txt
-        //                 echo "docker pull ${DOCKER_IMAGE}:${COMMIT_HASH}" >> deployment-instructions.txt
-        //                 echo "docker run -d -p 3000:3000 --name flex-url ${DOCKER_IMAGE}:${COMMIT_HASH}" >> deployment-instructions.txt
-        //                 echo "" >> deployment-instructions.txt
-        //                 echo "Or use latest:" >> deployment-instructions.txt
-        //                 echo "docker pull ${DOCKER_IMAGE}:latest" >> deployment-instructions.txt
-        //                 echo "docker run -d -p 3000:3000 --name flex-url ${DOCKER_IMAGE}:latest" >> deployment-instructions.txt
-        //                 echo "" >> deployment-instructions.txt
-        //                 echo "Health check:" >> deployment-instructions.txt
-        //                 echo "curl http://localhost:3000/health" >> deployment-instructions.txt
-                        
-        //                 cat deployment-instructions.txt
-        //             '''
-                    
-        //             // Optional: Trigger actual deployment to staging/production
-        //             // Uncomment and customize for your deployment environment
-        //             /*
-        //             echo 'Deploying to staging environment...'
-        //             sh '''
-        //                 # Example: Deploy to a staging server
-        //                 # ssh user@staging-server "docker pull ${DOCKER_IMAGE}:${COMMIT_HASH}"
-        //                 # ssh user@staging-server "docker stop flex-url-staging || true"
-        //                 # ssh user@staging-server "docker rm flex-url-staging || true"
-        //                 # ssh user@staging-server "docker run -d -p 3000:3000 --name flex-url-staging ${DOCKER_IMAGE}:${COMMIT_HASH}"
-        //                 echo "Deployment to staging would happen here"
-        //             '''
-        //             */
-        //         }
-        //     }
-        //     post {
-        //         always {
-        //             archiveArtifacts artifacts: 'deployment-instructions.txt', allowEmptyArchive: true
-        //         }
-        //     }
-        // }
-        
         stage('Update Deployment Repo') {
             steps {
                 script {
