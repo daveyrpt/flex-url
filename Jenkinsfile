@@ -163,7 +163,7 @@ pipeline {
         
         stage('Hello') {
             steps {
-                echo 'Hello World - Pipeline completed successfully! Test2'
+                echo 'Hello World - Pipeline completed successfully! Test3'
                 echo "✅ Application built, tested, scanned, containerized, and pushed to registry"
                 echo "🚀 Deployment repository updated - ArgoCD will auto-sync!"
             }
