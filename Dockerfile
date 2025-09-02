@@ -56,8 +56,7 @@ COPY --chown=www:www . .
 RUN composer dump-autoload --optimize && \
     php artisan config:cache && \
     php artisan route:cache && \
-    php artisan view:cache && \
-    php artisan optimize
+    php artisan view:cache 
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
