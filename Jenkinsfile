@@ -217,11 +217,35 @@ pipeline {
         //     }
         // }
         
+        stage('Update Deployment Repo') {
+            steps {
+                script {
+                    echo 'Updating deployment repository with new image tag...'
+                    
+                    def imageTag = env.COMMIT_HASH
+                    
+                    withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                        sh """
+                            # Clone the deployment/helm repository
+                            git clone https://github.com/daveyrpt/Kubernetes.git
+                            cd Kubernetes/helm/laravel-app
+                            sed -i 's/tag: .*/tag: "${BUILD_NUMBER}"/g' values.yaml
+                            git commit -am "Update image tag to ${BUILD_NUMBER}"
+                            git push
+                        """
+                    }
+                    
+                    echo "Deployment repository updated with image tag: ${imageTag}"
+                    echo "ArgoCD will automatically sync the new deployment"
+                }
+            }
+        }
+        
         stage('Hello') {
             steps {
                 echo 'Hello World - Pipeline completed successfully!'
                 echo "✅ Application built, tested, scanned, containerized, and pushed to registry"
-                echo "🚀 Ready for deployment!"
+                echo "🚀 Deployment repository updated - ArgoCD will auto-sync!"
             }
         }
     }
