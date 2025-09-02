@@ -64,4 +64,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 EXPOSE 9000
 
-CMD ["php-fpm"]
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+CMD ["/start.sh"]
